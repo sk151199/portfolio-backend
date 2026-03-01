@@ -3,24 +3,35 @@ console.log("Starting backend...");
 require("dotenv").config();
 
 const express = require("express");
-const cors = require("cors");
 const nodemailer = require("nodemailer");
 
 const app = express();
 
 /* ==============================
-   CORS CONFIG (Fixes 405 issue)
+   CORS FIX (Handles 405)
 ============================== */
 
-app.use(cors({
-    origin: "*",
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type"]
-}));
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
 
-app.options("*", cors());
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(200);
+    }
+
+    next();
+});
 
 app.use(express.json());
+
+/* ==============================
+   HEALTH CHECK ROUTE
+============================== */
+
+app.get("/", (req, res) => {
+    res.send("Backend is running 🚀");
+});
 
 /* ==============================
    CONTACT ROUTE
@@ -61,14 +72,6 @@ ${message}
         console.error("Email error:", error);
         res.status(500).json({ error: "Email failed" });
     }
-});
-
-/* ==============================
-   HEALTH CHECK ROUTE
-============================== */
-
-app.get("/", (req, res) => {
-    res.send("Backend is running 🚀");
 });
 
 /* ==============================
