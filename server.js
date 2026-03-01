@@ -1,13 +1,30 @@
 console.log("Starting backend...");
+
 require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
 
 const app = express();
 
-app.use(cors());
+/* ==============================
+   CORS CONFIG (Fixes 405 issue)
+============================== */
+
+app.use(cors({
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"]
+}));
+
+app.options("*", cors());
+
 app.use(express.json());
+
+/* ==============================
+   CONTACT ROUTE
+============================== */
 
 app.post("/contact", async (req, res) => {
     const { name, email, message } = req.body;
@@ -21,8 +38,8 @@ app.post("/contact", async (req, res) => {
             service: "gmail",
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
+                pass: process.env.EMAIL_PASS
+            }
         });
 
         await transporter.sendMail({
@@ -32,17 +49,31 @@ app.post("/contact", async (req, res) => {
             text: `
 Name: ${name}
 Email: ${email}
+
 Message:
 ${message}
-            `,
+            `
         });
 
         res.json({ success: true });
+
     } catch (error) {
-        console.error(error);
+        console.error("Email error:", error);
         res.status(500).json({ error: "Email failed" });
     }
 });
+
+/* ==============================
+   HEALTH CHECK ROUTE
+============================== */
+
+app.get("/", (req, res) => {
+    res.send("Backend is running 🚀");
+});
+
+/* ==============================
+   START SERVER
+============================== */
 
 const PORT = process.env.PORT || 5000;
 
